@@ -344,15 +344,22 @@ async function fetchFirstAvailableApi(strategy, apiKey, requestBody) {
 }
 
 async function postJson(apiUrl, apiKey, body, extraHeaders = {}) {
-  return fetch(apiUrl, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "Authorization": `Bearer ${apiKey}`,
-      ...extraHeaders
-    },
-    body: JSON.stringify(body)
-  });
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 30000);
+  try {
+    return await fetch(apiUrl, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${apiKey}`,
+        ...extraHeaders
+      },
+      body: JSON.stringify(body),
+      signal: controller.signal
+    });
+  } finally {
+    clearTimeout(timeout);
+  }
 }
 
 function mentionsUnsupportedParameter(errorText, parameterName) {
